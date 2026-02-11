@@ -1,4 +1,4 @@
-Project Hadith - Daily Hadith (FastAPI)
+#Project Hadith - Daily Hadith (FastAPI)
 
 This is a minimal FastAPI project that serves a modern, glassmorphism-style **Daily Hadith** page.
 
