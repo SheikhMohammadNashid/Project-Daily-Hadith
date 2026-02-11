@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_USER     = "sheikhnashid"
-        VM_USER         = "production"
+        VM_USER         = "s0du"
 
         // Single production VM IP
         PROD_IP         = "192.168.0.241"
