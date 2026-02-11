@@ -6,7 +6,7 @@ pipeline {
         VM_USER         = "production"
 
         // Single production VM IP
-        PROD_IP         = "192.168.0.227"
+        PROD_IP         = "192.168.0.241"
 
         SSH_CREDS_ID    = "vm-deploy-key"
         DOCKER_CREDS_ID = "docker-hub-creds"
