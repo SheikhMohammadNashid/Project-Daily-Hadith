@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  daily-hadith-app:
+    image: ${DOCKER_USER}/daily-hadith-app:v${TAG}
+    container_name: daily-hadith-app
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      # Example environment variables; extend as needed
+      FASTAPI_ENV: "production"
+    # If you mount volumes (templates/static) for live tweaks in production, add them here.
+    # volumes:
+    #   - ./templates:/app/templates:ro
+    #   - ./static:/app/static:ro
+

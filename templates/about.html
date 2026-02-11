@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>About · Daily Hadith</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Amiri:wght@400;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ["Inter", "system-ui", "sans-serif"],
+                    },
+                },
+            },
+        };
+    </script>
+</head>
+
+<body class="min-h-screen bg-slate-950 bg-[radial-gradient(circle_at_top,_#020617,_#020617_40%,_#020617_100%)] text-slate-100 antialiased">
+    <div class="mx-auto flex min-h-screen max-w-4xl items-stretch px-4 py-6 sm:px-6 lg:px-8">
+        <main
+            class="m-auto w-full rounded-3xl border border-white/5 bg-slate-950/50 p-6 shadow-[0_24px_60px_rgba(15,23,42,0.65)] backdrop-blur-xl sm:p-8">
+            <header class="flex flex-col gap-4 border-b border-white/5 pb-5 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex items-center gap-3">
+                    <div
+                        class="flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl bg-slate-900/80 ring-1 ring-emerald-500/40 shadow-lg shadow-emerald-500/25">
+                        <img src="{{ url_for('static', path='hadith-logo.png') }}" alt="Daily Hadith logo"
+                            class="h-10 w-10 object-contain" />
+                    </div>
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Daily Hadith</p>
+                        <p class="text-sm font-medium text-slate-100/90">About this project</p>
+                    </div>
+                </div>
+
+                <nav class="flex items-center gap-1.5 text-xs font-medium text-slate-400" aria-label="Main">
+                    <a href="/"
+                        class="rounded-full px-3 py-1.5 ring-1 ring-white/5 transition hover:bg-slate-900/60 hover:text-slate-100">
+                        Today
+                    </a>
+                    <a href="/about"
+                        class="rounded-full bg-slate-900/80 px-3 py-1.5 text-slate-100 shadow-sm shadow-slate-900/40 ring-1 ring-emerald-400/40">
+                        About
+                    </a>
+                </nav>
+            </header>
+
+            <section class="mt-6 max-w-2xl space-y-5 text-sm leading-relaxed text-slate-300">
+                <div>
+                    <h1 class="text-xl font-semibold tracking-tight text-slate-50">About Daily Hadith</h1>
+                    <p class="mt-2 text-slate-300/90">
+                        <span class="font-semibold text-slate-50">Daily Hadith</span> is a dedicated platform committed
+                        to
+                        sharing authentic sayings of Prophet Muhammad ﷺ in a clear, accessible, and reliable format.
+                        The
+                        purpose of this initiative is to provide readers with daily spiritual guidance rooted in the
+                        teachings of Islam.
+                    </p>
+                    <p class="mt-2">
+                        In today’s fast-paced digital world, access to authentic Islamic knowledge should be simple,
+                        structured, and trustworthy. This platform aims to present carefully referenced Hadith to
+                        encourage reflection, understanding, and practical implementation in everyday life.
+                    </p>
+                </div>
+
+                <div>
+                    <h2 class="mt-4 text-sm font-semibold tracking-wide text-slate-100">Our Mission</h2>
+                    <p class="mt-1">
+                        Our goals are:
+                    </p>
+                    <ul class="mt-2 space-y-1.5 text-slate-300">
+                        <li class="flex gap-2">
+                            <span class="mt-[6px] h-1 w-1 rounded-full bg-slate-400"></span>
+                            <span>To promote authentic and verified Hadith literature</span>
+                        </li>
+                        <li class="flex gap-2">
+                            <span class="mt-[6px] h-1 w-1 rounded-full bg-slate-400"></span>
+                            <span>To encourage consistent daily engagement with the teachings of the Prophet ﷺ</span>
+                        </li>
+                        <li class="flex gap-2">
+                            <span class="mt-[6px] h-1 w-1 rounded-full bg-slate-400"></span>
+                            <span>To support learning, reflection, and character development</span>
+                        </li>
+                        <li class="flex gap-2">
+                            <span class="mt-[6px] h-1 w-1 rounded-full bg-slate-400"></span>
+                            <span>To provide properly referenced content for transparency and credibility</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h2 class="mt-4 text-sm font-semibold tracking-wide text-slate-100">Sources &amp; Authenticity</h2>
+                    <p class="mt-1">
+                        All Hadith shared on this platform are sourced from recognized and authoritative collections,
+                        including:
+                    </p>
+                    <ul class="mt-2 space-y-1.5 text-slate-300">
+                        <li class="flex gap-2">
+                            <span class="mt-[6px] h-1 w-1 rounded-full bg-slate-400"></span>
+                            <span>Sahih al-Bukhari</span>
+                        </li>
+                        <li class="flex gap-2">
+                            <span class="mt-[6px] h-1 w-1 rounded-full bg-slate-400"></span>
+                            <span>Sahih Muslim</span>
+                        </li>
+                        <li class="flex gap-2">
+                            <span class="mt-[6px] h-1 w-1 rounded-full bg-slate-400"></span>
+                            <span>Sunan Abu Dawood</span>
+                        </li>
+                        <li class="flex gap-2">
+                            <span class="mt-[6px] h-1 w-1 rounded-full bg-slate-400"></span>
+                            <span>Jami’ at-Tirmidhi</span>
+                        </li>
+                        <li class="flex gap-2">
+                            <span class="mt-[6px] h-1 w-1 rounded-full bg-slate-400"></span>
+                            <span>Other well-established Hadith compilations</span>
+                        </li>
+                    </ul>
+                    <p class="mt-2">
+                        References are provided wherever possible to maintain clarity and reliability. Every effort is
+                        made to ensure accuracy and authenticity.
+                    </p>
+                </div>
+
+                <div>
+                    <h2 class="mt-4 text-sm font-semibold tracking-wide text-slate-100">Responsibility &amp;
+                        Disclaimer</h2>
+                    <p class="mt-2">
+                        This platform is intended for educational and spiritual benefit. While careful attention is
+                        given to accuracy, readers are encouraged to consult qualified scholars for detailed
+                        interpretations or academic purposes.
+                    </p>
+                </div>
+
+                <div>
+                    <h2 class="mt-4 text-sm font-semibold tracking-wide text-slate-100">About the Creator</h2>
+                    <p class="mt-2">
+                        This project has been developed by
+                        <span class="font-semibold text-slate-50">Sheikh Mohammad Nashid</span>
+                        with the intention of combining technology and Islamic knowledge to make authentic Hadith more
+                        accessible in the digital space.
+                    </p>
+                </div>
+            </section>
+        </main>
+    </div>
+</body>
+
+</html>
+
