@@ -10,15 +10,14 @@ services:
     environment:
       # Example environment variables; extend as needed
       FASTAPI_ENV: "production"
-      # External hadith API configuration.
-      # The API URL should be provided as an environment variable on the host/VM.
-      # Example:
-      #   export HADITH_API_URL="https://your-hadith-api.example.com/hadith"
-      HADITH_API_URL: "${HADITH_API_URL}"
-      # API key is injected from the CI/CD pipeline or VM environment.
-      HADITH_API_KEY: "${HADITH_API_KEY}"
+      # Location of the SQLite database file inside the container.
+      HADITH_DB_PATH: "/app/data/hadith.db"
+    volumes:
+      - hadith_db:/app/data
     # If you mount volumes (templates/static) for live tweaks in production, add them here.
-    # volumes:
-    #   - ./templates:/app/templates:ro
-    #   - ./static:/app/static:ro
+    # - ./templates:/app/templates:ro
+    # - ./static:/app/static:ro
+
+volumes:
+  hadith_db:
 

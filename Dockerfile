@@ -29,9 +29,16 @@ COPY --from=builder /app/requirements.txt .
 RUN pip install --no-cache-dir /wheels/* && \
     rm -rf /wheels
 
-COPY app.py README.md requirements.txt ./
+COPY app.py db_utils.py db_seed_samples.py seed_hadiths.py README.md requirements.txt ./
 COPY templates ./templates
 COPY static ./static
+
+# Include CSV source files (e.g. Sahih al-Bukhari.csv) inside the image
+# so the seeding script can run inside the container if needed.
+COPY *.csv ./ 
+
+# Directory for SQLite database file (can be backed by a Docker volume).
+RUN mkdir -p /app/data
 
 EXPOSE 8000
 

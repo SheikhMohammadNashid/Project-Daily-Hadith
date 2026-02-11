@@ -34,31 +34,31 @@ uvicorn app:app --reload
 
 Then open `http://127.0.0.1:8000/` in your browser.
 
-## Customising the hadith
+## Customising the hadith (database-backed)
 
-The sample hadiths are currently defined in `app.py` in the `SAMPLE_HADITHS` list. You can:
+The app now stores hadith in a **SQLite database** instead of a Python list.
 
-- Replace them with your own verified hadiths.
-- Load them from a database or file instead of hardcoding.
-- Implement rotation logic (daily, random, etc.) inside the `get_daily_hadith()` function.
+- The database file path defaults to `hadith.db` in the project root.
+- You can override this with the `HADITH_DB_PATH` environment variable.
+- On startup, the app ensures the `hadiths` table exists and seeds a **small sample set** if the table is empty.
 
-Always ensure that any hadith text and references are checked against **reliable, authentic sources** before public use.
+For real use, you should replace the sample data with at least **500 verified hadith** from **Sahih al-Bukhari** and **Sahih Muslim**:
 
-## Using an external Hadith API
-
-The app can optionally fetch hadith from an external API using an API key, and will fall back to the built‑in `SAMPLE_HADITHS` list if the API is unavailable or not configured.
-
-Configure the following environment variables (locally or on your server/VM):
-
-- `HADITH_API_URL` – Base URL of your hadith API endpoint that returns a hadith JSON.
-- `HADITH_API_KEY` – API key used for authentication. The app sends this as a `Bearer` token via the `Authorization` header.
-
-Example (local run):
+1. Prepare a `hadiths.csv` file in the project root with columns:
+   - `collection` (e.g. `Sahih al-Bukhari`, `Sahih Muslim`)
+   - `reference` (e.g. `Sahih al-Bukhari 1`, `Sahih Muslim 55`)
+   - `arabic`
+   - `translation`
+   - `narrator`
+2. Run the seed script:
 
 ```bash
-export HADITH_API_URL="https://your-hadith-api.example.com/hadith"
-export HADITH_API_KEY="YOUR_REAL_KEY_HERE"
-uvicorn app:app --reload
+python seed_hadiths.py
 ```
 
-When running via Docker Compose, `docker-compose.yml` is already wired to pass `HADITH_API_URL` and `HADITH_API_KEY` from the host environment into the container.
+This will create `hadith.db` (if needed) and bulk-insert the records from `hadiths.csv`. The app then serves:
+
+- A **daily hadith** (deterministic by date) from the database.
+- A **random hadith** via `/api/hadith?mode=random`.
+
+Always ensure that any hadith text and references are checked against **reliable, authentic sources** before public use.

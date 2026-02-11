@@ -1,13 +1,14 @@
-import os
 import random
+import sqlite3
 from datetime import date
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
-import httpx
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+
+from db_utils import get_db_connection, init_db, row_to_hadith
 
 app = FastAPI(title="Daily Hadith")
 
@@ -15,140 +16,49 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
 
-HADITH_API_URL = os.getenv("HADITH_API_URL", "").rstrip("/")
-HADITH_API_KEY = os.getenv("HADITH_API_KEY")
-
-
-# Local fallback hadith list – still used if API is unavailable.
-SAMPLE_HADITHS = [
-    {
-        "reference": "Sahih al-Bukhari 1",
-        "arabic": "إِنَّمَا الأَعْمَالُ بِالنِّيَّاتِ",
-        "translation": "Actions are judged by intentions.",
-        "narrator": "Umar ibn al-Khattab (ra)",
-        "collection": "Sahih al-Bukhari",
-    },
-    {
-        "reference": "Sahih al-Bukhari 10",
-        "arabic": "الدِّينُ النَّصِيحَةُ",
-        "translation": "The religion is sincere advice.",
-        "narrator": "Tamim ad-Dari (ra)",
-        "collection": "Sahih al-Bukhari",
-    },
-    {
-        "reference": "Sahih Muslim 55",
-        "arabic": "لَا يُؤْمِنُ أَحَدُكُمْ حَتَّى يُحِبَّ لأَخِيهِ مَا يُحِبُّ لِنَفْسِهِ",
-        "translation": "None of you truly believes until he loves for his brother what he loves for himself.",
-        "narrator": "Anas ibn Malik (ra)",
-        "collection": "Sahih Muslim",
-    },
-    {
-        "reference": "Sunan al-Tirmidhi 2516",
-        "arabic": "مِنْ حُسْنِ إِسْلَامِ الْمَرْءِ تَرْكُهُ مَا لَا يَعْنِيهِ",
-        "translation": "Part of a person’s good Islam is leaving that which does not concern him.",
-        "narrator": "Abu Hurairah (ra)",
-        "collection": "Jamiʿ at-Tirmidhi",
-    },
-]
-
-
-def get_daily_index() -> int:
-    """Deterministic index based on today's date, so the hadith is stable for the day."""
-    today = date.today().toordinal()
-    return today % len(SAMPLE_HADITHS)
-
 
 def get_daily_hadith() -> Dict[str, Any]:
-    return SAMPLE_HADITHS[get_daily_index()]
+    """
+    Deterministic hadith based on today's date, using the database.
+    """
+    conn = get_db_connection()
+    try:
+        cur = conn.execute("SELECT COUNT(*) AS c FROM hadiths")
+        count = cur.fetchone()["c"]
+        if count == 0:
+            raise RuntimeError("No hadiths found in database.")
+
+        today_index = date.today().toordinal() % count
+        cur = conn.execute(
+            "SELECT * FROM hadiths ORDER BY id LIMIT 1 OFFSET ?",
+            (today_index,),
+        )
+        row = cur.fetchone()
+        if row is None:
+            raise RuntimeError("Failed to load daily hadith from database.")
+        return row_to_hadith(row)
+    finally:
+        conn.close()
 
 
 def get_random_hadith() -> Dict[str, Any]:
-    return random.choice(SAMPLE_HADITHS)
-
-
-def _normalize_external_hadith(payload: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Normalize a hadith payload from an external API into the shape
-    expected by the frontend.
+    Random hadith from the database.
     """
-    # Try a few common key variants, but always provide safe defaults.
-    reference = (
-        payload.get("reference")
-        or payload.get("ref")
-        or payload.get("id")
-        or "Hadith reference"
-    )
-    arabic = payload.get("arabic") or payload.get("text_ar") or payload.get("text") or ""
-    translation = (
-        payload.get("translation")
-        or payload.get("text_en")
-        or payload.get("translation_en")
-        or ""
-    )
-    narrator = payload.get("narrator") or payload.get("rawi") or "Unknown"
-    collection = payload.get("collection") or payload.get("book") or ""
-
-    return {
-        "reference": reference,
-        "arabic": arabic,
-        "translation": translation,
-        "narrator": narrator,
-        "collection": collection,
-    }
-
-
-async def fetch_hadith_from_api(mode: str = "daily") -> Optional[Dict[str, Any]]:
-    """
-    Fetch a hadith from an external API using an API key.
-
-    - Uses HADITH_API_URL and HADITH_API_KEY from the environment.
-    - Returns None if configuration is missing or any error occurs.
-    """
-    if not HADITH_API_URL or not HADITH_API_KEY:
-        # External API not configured; caller should fallback to local list.
-        return None
-
-    url = HADITH_API_URL
-    params = {"mode": mode}
-    headers = {
-        # The user requested a key-based retrieval; we send it as a Bearer token.
-        "Authorization": f"Bearer {HADITH_API_KEY}",
-    }
-
+    conn = get_db_connection()
     try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            response = await client.get(url, params=params, headers=headers)
-            response.raise_for_status()
-            data = response.json()
-
-        # Some APIs wrap the hadith inside a field like "data" or "hadith".
-        if isinstance(data, dict):
-            candidate = (
-                data.get("hadith")
-                or data.get("data")
-                or data
-            )
-        else:
-            candidate = data
-
-        if isinstance(candidate, list) and candidate:
-            # Take the first item if a list is returned.
-            candidate = candidate[0]
-
-        if not isinstance(candidate, dict):
-            return None
-
-        return _normalize_external_hadith(candidate)
-    except Exception as exc:  # noqa: BLE001
-        # In this minimal app we just log and quietly fall back to local data.
-        print(f"[Daily Hadith] Failed to fetch from external API: {exc}")
-        return None
+        cur = conn.execute("SELECT * FROM hadiths ORDER BY RANDOM() LIMIT 1")
+        row = cur.fetchone()
+        if row is None:
+            raise RuntimeError("No hadiths found in database.")
+        return row_to_hadith(row)
+    finally:
+        conn.close()
 
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
-    # Prefer external API if configured; otherwise fall back to local list.
-    hadith = await fetch_hadith_from_api(mode="daily") or get_daily_hadith()
+    hadith = get_daily_hadith()
     return templates.TemplateResponse(
         "index.html",
         {
@@ -180,15 +90,16 @@ async def api_hadith(mode: str = "daily"):
     if mode not in {"daily", "random"}:
         mode = "daily"
 
-    # Try the external API first if configured.
-    external = await fetch_hadith_from_api(mode=mode)
-    if external is not None:
-        return external
-
-    # Fallback to local list.
     if mode == "random":
         return get_random_hadith()
     return get_daily_hadith()
+
+
+@app.on_event("startup")
+def on_startup() -> None:
+    # When the API is running, we seed only a tiny sample if the DB is empty,
+    # so the UI still works even if you have not run seed_hadiths.py yet.
+    init_db(seed_if_empty=True)
 
 
 if __name__ == "__main__":
