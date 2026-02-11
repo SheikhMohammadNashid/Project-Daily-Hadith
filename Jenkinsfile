@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_USER     = "sheikhnashid"
-        VM_USER         = "s0du"
+        VM_USER         = "s0do"
 
         // Single production VM IP
         PROD_IP         = "192.168.0.241"
@@ -11,7 +11,12 @@ pipeline {
         SSH_CREDS_ID    = "vm-deploy-key"
         DOCKER_CREDS_ID = "docker-hub-creds"
 
+        // Build tag for Docker image
         TAG             = "${env.BUILD_NUMBER}"
+
+        // Hadith API key used by the application (injected into the container).
+        // NOTE: This is provided by the user and is required for external hadith retrieval.
+        HADITH_API_KEY  = '$2y$10$qqUDWLxf5jYeSOsbA49zOBUWyN88wpioiDIRwyyhAcbh5nav6arq'
     }
 
     options {
@@ -62,6 +67,8 @@ pipeline {
                         ssh -o StrictHostKeyChecking=no ${VM_USER}@${PROD_IP} '
                             export TAG=${TAG}
                             export DOCKER_USER=${DOCKER_USER}
+                            # Ensure the hadith API key is available to docker-compose.
+                            export HADITH_API_KEY='\${HADITH_API_KEY}'
 
                             docker compose down || true
                             docker compose pull
