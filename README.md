@@ -59,6 +59,4 @@ python seed_hadiths.py
 This will create `hadith.db` (if needed) and bulk-insert the records from `hadiths.csv`. The app then serves:
 
 - A **daily hadith** (deterministic by date) from the database.
-- A **random hadith** via `/api/hadith?mode=random`.
-
-Always ensure that any hadith text and references are checked against **reliable, authentic sources** before public use.
+- A **random hadith** via `/api/hadith?mode=random`.Always ensure that any hadith text and references are checked against **reliable, authentic sources** before public use.
