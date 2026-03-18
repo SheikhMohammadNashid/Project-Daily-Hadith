@@ -27,7 +27,7 @@ pipeline {
         stage('Deploy to Staging') {
             steps {
                 sshagent([SSH_CREDS_ID]) {
-                    sh "scp -o StrictHostKeyChecking=no docker-compose.staging.yml ${STG_USER}@${STAGING_IP}:~/docker-compose.yml"
+                    sh "scp -o StrictHostKeyChecking=no docker-compose.yml ${STG_USER}@${STAGING_IP}:~/docker-compose.yml"
                     sh """
                         ssh -o StrictHostKeyChecking=no ${STG_USER}@${STAGING_IP} '
                             docker ps -a --format "{{.Names}}" | grep -E "^daily-hadith" | xargs -r docker rm -f
@@ -47,7 +47,7 @@ pipeline {
         stage('Deploy to Production') {
             steps {
                 sshagent([SSH_CREDS_ID]) {
-                    sh "scp -o StrictHostKeyChecking=no docker-compose.prod.yml ${PROD_USER}@${PROD_IP}:~/docker-compose.yml"
+                    sh "scp -o StrictHostKeyChecking=no docker-compose.yml ${PROD_USER}@${PROD_IP}:~/docker-compose.yml"
                     sh """
                         ssh -o StrictHostKeyChecking=no ${PROD_USER}@${PROD_IP} '
                             docker ps -a --format "{{.Names}}" | grep -E "^daily-hadith" | xargs -r docker rm -f
