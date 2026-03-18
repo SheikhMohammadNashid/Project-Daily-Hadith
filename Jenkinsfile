@@ -1,93 +1,72 @@
 pipeline {
     agent any
-
     environment {
-        DOCKER_USER     = "sheikhnashid"
-        VM_USER         = "s0du"
-
-        // Single production VM IP
-        PROD_IP         = "192.168.0.241"
-
-        SSH_CREDS_ID    = "vm-deploy-key"
+        DOCKER_USER = "sheikhnashid"
+        STG_USER = "stg"
+        PROD_USER = "prod"
+        STAGING_IP = "192.168.1.179"
+        PROD_IP = "192.168.1.161"
         DOCKER_CREDS_ID = "docker-hub-creds"
-
-        // Build tag for Docker image
-        TAG             = "${env.BUILD_NUMBER}"
+        SSH_CREDS_ID = "vm-deploy-key"
+        TAG = "${env.BUILD_NUMBER}"
     }
-
-    options {
-        timestamps()
-        ansiColor('xterm')
-    }
-
     stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
-
         stage('Build & Push') {
             steps {
                 script {
-                    withCredentials([
-                        usernamePassword(
-                            credentialsId: DOCKER_CREDS_ID,
-                            usernameVariable: 'USER',
-                            passwordVariable: 'PASS'
-                        )
-                    ]) {
-                        sh 'echo $PASS | docker login -u $USER --password-stdin'
+                    withCredentials([usernamePassword(credentialsId: DOCKER_CREDS_ID, passwordVariable: 'PASS', usernameVariable: 'USER')]) {
+                        sh "echo \$PASS | docker login -u \$USER --password-stdin"
 
-                        sh "docker build -t ${DOCKER_USER}/daily-hadith-app:v${TAG} ."
-                        sh "docker tag ${DOCKER_USER}/daily-hadith-app:v${TAG} ${DOCKER_USER}/daily-hadith-app:latest"
+                        // 1. Build & Push Backend (One image for both envs)
+                        sh "docker build -t ${DOCKER_USER}/hero-backend:v${TAG} ./app"
+                        sh "docker push ${DOCKER_USER}/hero-backend:v${TAG}"
 
-                        sh "docker push ${DOCKER_USER}/daily-hadith-app:v${TAG}"
-                        sh "docker push ${DOCKER_USER}/daily-hadith-app:latest"
+                        // 2. Build & Push Frontend for STAGING (Points to .36)
+                        sh "docker build --build-arg REACT_APP_API_URL=http://${STAGING_IP}:8000 -t ${DOCKER_USER}/hero-frontend:stg-v${TAG} ./Frontend"
+                        sh "docker push ${DOCKER_USER}/hero-frontend:stg-v${TAG}"
+
+                        // 3. Build & Push Frontend for PRODUCTION (Points to .35)
+                        sh "docker build --build-arg REACT_APP_API_URL=http://${PROD_IP}:8000 -t ${DOCKER_USER}/hero-frontend:prod-v${TAG} ./Frontend"
+                        sh "docker push ${DOCKER_USER}/hero-frontend:prod-v${TAG}"
                     }
                 }
             }
         }
-
+        stage('Deploy to Staging') {
+            steps {
+                sshagent([SSH_CREDS_ID]) {
+                    sh "scp -o StrictHostKeyChecking=no docker-compose.staging.yml ${STG_USER}@${STAGING_IP}:~/docker-compose.yml"
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ${STG_USER}@${STAGING_IP} '
+                            docker ps -a --format "{{.Names}}" | grep -E "^(verjenkins|herovault|hero)-" | xargs -r docker rm -f
+                            export TAG=${TAG}
+                            export DOCKER_USER=${DOCKER_USER}
+                            docker compose up -d
+                        '
+                    """
+                }
+            }
+        }
+        stage('Approval Gate') {
+            steps {
+                input message: "Verify Staging at http://${STAGING_IP}:3000. Promote to Production?", ok: "Deploy!"
+            }
+        }
         stage('Deploy to Production') {
             steps {
                 sshagent([SSH_CREDS_ID]) {
-                    script {
-                        echo "Deploying to Production VM..."
-
-                        // Copy compose file
-                        sh "scp -o StrictHostKeyChecking=no docker-compose.yml ${VM_USER}@${PROD_IP}:~/docker-compose.yml"
-
-                        // Remote deployment using exported variables
-                        sh """
-                        ssh -o StrictHostKeyChecking=no ${VM_USER}@${PROD_IP} '
+                    sh "scp -o StrictHostKeyChecking=no docker-compose.prod.yml ${PROD_USER}@${PROD_IP}:~/docker-compose.yml"
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ${PROD_USER}@${PROD_IP} '
+                            docker ps -a --format "{{.Names}}" | grep -E "^(verjenkins|herovault|hero)-" | xargs -r docker rm -f
                             export TAG=${TAG}
                             export DOCKER_USER=${DOCKER_USER}
-
-                            docker compose down || true
                             docker compose pull
                             docker compose up -d
-
-                            # Seed the hadith database inside the running container, if empty.
-                            docker compose exec -T daily-hadith-app python seed_hadiths.py || true
                         '
-                        """
-                    }
+                    """
                 }
             }
         }
     }
-
-    post {
-        always {
-            sh 'docker image prune -f || true'
-        }
-        failure {
-            echo 'Build or deployment failed.'
-        }
-        success {
-            echo "Deployment completed successfully for build #${env.BUILD_NUMBER}"
-        }
-    }
 }
-
